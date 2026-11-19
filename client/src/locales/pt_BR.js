@@ -4,6 +4,7 @@ export default {
     overview: 'Visão Geral',
     inventory: 'Estoque',
     orders: 'Pedidos',
+    shipments: 'Remessas',
     finance: 'Finanças',
     demandForecast: 'Previsão de Demanda',
     companyName: 'Catalyst Components',
@@ -126,6 +127,70 @@ export default {
       status: 'Status',
       expectedDelivery: 'Entrega Prevista',
       actualDelivery: 'Entrega Realizada'
+    }
+  },
+
+  ordersCache: {
+    title: 'Cache de Pedidos',
+    description: 'Inspecionar ou limpar dados de pedidos em cache (Redis)',
+    list: 'Listar cache',
+    clear: 'Limpar cache',
+    listing: 'Carregando...',
+    clearing: 'Limpando...',
+    count: '{count} entradas',
+    unavailable: 'O cache Redis não está disponível; os pedidos são servidos diretamente do banco de dados',
+    empty: 'O cache está vazio',
+    cleared: '{count} entradas removidas',
+    listError: 'Falha ao carregar as entradas do cache',
+    clearError: 'Falha ao limpar o cache',
+    confirm: 'Limpar todas as entradas de pedidos em cache?',
+    confirmYes: 'Confirmar',
+    entry: 'Entrada',
+    expires: 'Expira (s)',
+    noExpiry: 'Sem expiração',
+    order: 'Pedido #{id}',
+    orderList: 'Lista de pedidos',
+    warehouse: 'Armazém',
+    category: 'Categoria',
+    status: 'Status',
+    month: 'Mês',
+    allOrders: 'Todos os pedidos',
+    seconds: '{n}s'
+  },
+
+  shipments: {
+    title: 'Remessas',
+    description: 'Acompanhe as remessas e o desempenho de entrega',
+    total: 'Total de Remessas',
+    inTransit: 'Em Trânsito',
+    delayed: 'Atrasadas',
+    onTime: 'Taxa de Entrega no Prazo',
+    onTimeNote: '{count} de {total} entregues no prazo',
+    all: 'Todas as Remessas',
+    empty: 'Nenhuma remessa corresponde aos filtros atuais',
+    loadError: 'Falha ao carregar as remessas',
+    etaPrefix: 'Prev.',
+    pending: 'Não enviada',
+    kg: 'kg',
+    table: {
+      shipmentNumber: 'Remessa',
+      orderNumber: 'Pedido',
+      customer: 'Cliente',
+      carrier: 'Transportadora',
+      trackingNumber: 'Código de Rastreio',
+      destination: 'Destino',
+      status: 'Status',
+      shipDate: 'Data de Envio',
+      delivery: 'Entrega (Prevista / Real)',
+      packages: 'Volumes',
+      weight: 'Peso'
+    },
+    status: {
+      preparing: 'Preparando',
+      inTransit: 'Em Trânsito',
+      outForDelivery: 'Saiu para Entrega',
+      delivered: 'Entregue',
+      delayed: 'Atrasada'
     }
   },
 
@@ -302,6 +367,13 @@ export default {
     dueDate: 'Prazo',
     addTask: 'Adicionar Tarefa',
     noTasks: 'Nenhuma tarefa ainda. Adicione sua primeira tarefa acima!'
+  },
+
+  // Theme
+  theme: {
+    label: 'Tema',
+    light: 'Claro',
+    dark: 'Escuro'
   },
 
   // Language

@@ -75,6 +75,61 @@
         </div>
       </div>
     </div>
+
+    <div class="card cache-section">
+      <div class="card-header cache-header">
+        <div>
+          <h3 class="card-title">{{ t('ordersCache.title') }}</h3>
+          <p class="cache-desc">{{ t('ordersCache.description') }}</p>
+        </div>
+        <div class="cache-actions">
+          <button type="button" class="cache-btn" :disabled="cacheListing || cacheClearing" @click="listCache">
+            {{ cacheListing ? t('ordersCache.listing') : t('ordersCache.list') }}
+          </button>
+          <button
+            v-if="!confirmingClear"
+            type="button"
+            class="cache-btn cache-btn-danger"
+            :disabled="cacheListing || cacheClearing"
+            @click="confirmingClear = true"
+          >
+            {{ cacheClearing ? t('ordersCache.clearing') : t('ordersCache.clear') }}
+          </button>
+          <template v-else>
+            <span class="cache-confirm-text">{{ t('ordersCache.confirm') }}</span>
+            <button type="button" class="cache-btn cache-btn-danger" :disabled="cacheClearing" @click="clearCache">
+              {{ t('ordersCache.confirmYes') }}
+            </button>
+            <button type="button" class="cache-btn" :disabled="cacheClearing" @click="confirmingClear = false">
+              {{ t('common.cancel') }}
+            </button>
+          </template>
+        </div>
+      </div>
+
+      <div v-if="cacheMessage" :class="['cache-message', cacheMessage.type]" role="status">{{ cacheMessage.text }}</div>
+
+      <div v-if="cacheLoaded && cacheAvailable">
+        <div class="cache-count">{{ t('ordersCache.count', { count: cacheEntries.length }) }}</div>
+        <div v-if="cacheEntries.length === 0" class="cache-empty">{{ t('ordersCache.empty') }}</div>
+        <div v-else class="table-container">
+          <table class="cache-table">
+            <thead>
+              <tr>
+                <th>{{ t('ordersCache.entry') }}</th>
+                <th class="cache-col-ttl">{{ t('ordersCache.expires') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="entry in cacheEntries" :key="entry.key">
+                <td :title="entry.key">{{ describeKey(entry.key) }}</td>
+                <td class="cache-col-ttl">{{ entry.ttl_seconds == null ? t('ordersCache.noExpiry') : entry.ttl_seconds }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -90,7 +145,7 @@ export default {
     const { t, currentCurrency, translateProductName, translateCustomerName } = useI18n()
 
     const currencySymbol = computed(() => {
-      return currentCurrency.value === 'JPY' ? '¥' : '$'
+      return ['JPY', 'CNY'].includes(currentCurrency.value) ? '¥' : '$'
     })
     const loading = ref(true)
     const error = ref(null)
@@ -145,12 +200,100 @@ export default {
 
     const formatDate = (dateString) => {
       const { currentLocale } = useI18n()
-      const locale = currentLocale.value === 'ja' ? 'ja-JP' : 'en-US'
+      const locale = currentLocale.value === 'ja' ? 'ja-JP' : currentLocale.value === 'zh' ? 'zh-CN' : 'en-US'
       return new Date(dateString).toLocaleDateString(locale, {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
       })
+    }
+
+    // Order cache section (independent of orders loading state)
+    const cacheListing = ref(false)
+    const cacheClearing = ref(false)
+    const confirmingClear = ref(false)
+    const cacheLoaded = ref(false)
+    const cacheAvailable = ref(true)
+    const cacheEntries = ref([])
+    const cacheMessage = ref(null)
+
+    const describeKey = (key) => {
+      if (typeof key !== 'string') return String(key)
+      if (key.startsWith('order:')) {
+        return t('ordersCache.order', { id: key.slice(6) })
+      }
+      if (key.startsWith('orders:')) {
+        try {
+          const parsed = JSON.parse(key.slice(7))
+          if (Array.isArray(parsed)) {
+            const labels = ['warehouse', 'category', 'status', 'month']
+            const parts = labels
+              .map((label, i) => (parsed[i] != null ? `${t('ordersCache.' + label)}: ${parsed[i]}` : null))
+              .filter(Boolean)
+            return parts.length ? parts.join(', ') : t('ordersCache.allOrders')
+          }
+        } catch (e) {
+          // fall through to raw key
+        }
+      }
+      return key
+    }
+
+    const applyCacheResponse = (data) => {
+      cacheAvailable.value = !!data.available
+      cacheEntries.value = Array.isArray(data.entries) ? data.entries : []
+      cacheLoaded.value = true
+    }
+
+    const fetchCache = async () => {
+      const data = await api.getOrdersCache()
+      applyCacheResponse(data)
+      return data
+    }
+
+    const listCache = async () => {
+      cacheListing.value = true
+      confirmingClear.value = false
+      cacheMessage.value = null
+      try {
+        const data = await fetchCache()
+        if (!data.available) {
+          cacheMessage.value = { type: 'warning', text: t('ordersCache.unavailable') }
+        }
+      } catch (err) {
+        console.error('Cache list error:', err)
+        cacheMessage.value = { type: 'danger', text: t('ordersCache.listError') }
+      } finally {
+        cacheListing.value = false
+      }
+    }
+
+    const clearCache = async () => {
+      cacheClearing.value = true
+      confirmingClear.value = false
+      cacheMessage.value = null
+      try {
+        const result = await api.clearOrdersCache()
+        if (!result.available) {
+          cacheAvailable.value = false
+          cacheEntries.value = []
+          cacheLoaded.value = true
+          cacheMessage.value = { type: 'warning', text: t('ordersCache.unavailable') }
+        } else {
+          const message = { type: 'success', text: t('ordersCache.cleared', { count: result.deleted }) }
+          try {
+            await fetchCache()
+          } catch (err) {
+            console.error('Cache refresh error:', err)
+          }
+          cacheMessage.value = message
+        }
+      } catch (err) {
+        console.error('Cache clear error:', err)
+        cacheMessage.value = { type: 'danger', text: t('ordersCache.clearError') }
+      } finally {
+        cacheClearing.value = false
+      }
     }
 
     onMounted(loadOrders)
@@ -165,7 +308,17 @@ export default {
       formatDate,
       currencySymbol,
       translateProductName,
-      translateCustomerName
+      translateCustomerName,
+      cacheListing,
+      cacheClearing,
+      confirmingClear,
+      cacheLoaded,
+      cacheAvailable,
+      cacheEntries,
+      cacheMessage,
+      describeKey,
+      listCache,
+      clearCache
     }
   }
 }
@@ -210,7 +363,7 @@ export default {
 
 .items-summary {
   cursor: pointer;
-  color: #3b82f6;
+  color: var(--ac-3b82f6);
   font-weight: 500;
   list-style: none;
   user-select: none;
@@ -234,7 +387,7 @@ export default {
 }
 
 .items-summary:hover {
-  color: #2563eb;
+  color: var(--ac-2563eb);
   text-decoration: underline;
 }
 
@@ -244,8 +397,8 @@ export default {
   top: 100%;
   left: 0;
   margin-top: 0.5rem;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   padding: 0.75rem;
@@ -259,7 +412,7 @@ export default {
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.5rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--surface-2);
 }
 
 .item-entry:last-child {
@@ -269,11 +422,119 @@ export default {
 .item-name {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #0f172a;
+  color: var(--text-strong);
 }
 
 .item-meta {
   font-size: 0.813rem;
-  color: #64748b;
+  color: var(--text-muted);
+}
+/* Order cache section */
+.cache-section {
+  margin-top: 1.25rem;
+}
+
+.cache-header {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cache-desc {
+  margin-top: 0.25rem;
+  font-size: 0.813rem;
+  color: var(--text-muted);
+}
+
+.cache-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cache-btn {
+  padding: 0.375rem 0.875rem;
+  font-size: 0.813rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-2);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.cache-btn:hover:not(:disabled) {
+  border-color: var(--ac-2563eb);
+  color: var(--ac-2563eb);
+}
+
+.cache-btn-danger {
+  color: var(--ac-dc2626);
+}
+
+.cache-btn-danger:hover:not(:disabled) {
+  border-color: var(--ac-dc2626);
+  color: var(--ac-dc2626);
+}
+
+.cache-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cache-btn:focus-visible {
+  outline: 2px solid var(--ac-2563eb);
+  outline-offset: 2px;
+}
+
+.cache-confirm-text {
+  font-size: 0.813rem;
+  color: var(--text-3);
+}
+
+.cache-message {
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.813rem;
+  font-weight: 500;
+}
+
+.cache-message.success {
+  background: var(--tint-d1fae5);
+  color: var(--ac-065f46);
+}
+
+.cache-message.warning {
+  background: var(--tint-fed7aa);
+  color: var(--ac-92400e);
+}
+
+.cache-message.danger {
+  background: var(--tint-fecaca);
+  color: var(--ac-991b1b);
+}
+
+.cache-count {
+  margin-bottom: 0.5rem;
+  font-size: 0.813rem;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.cache-empty {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.cache-table td:first-child {
+  overflow-wrap: anywhere;
+}
+
+.cache-col-ttl {
+  width: 160px;
+  text-align: right;
 }
 </style>

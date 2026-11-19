@@ -1,39 +1,23 @@
 """
-Mock data for the Factory Inventory Management System
-This module loads sample data from JSON files for inventory items, orders, demand forecasts, and backlog items.
-All data is from September 2025 and includes warehouse, category, and date fields for filtering.
+Data access for the Factory Inventory Management System.
+Data lives in a SQLite database (see db.py) that is created and seeded from the
+JSON files in data/ on first start. This module reads the tables into the lists
+and dicts the API endpoints filter in memory.
 """
 
-import json
-import os
+import db
 
-# Get the directory where this file is located
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, 'data')
+db.init_db()
 
-def load_json_file(filename):
-    """Load data from a JSON file in the data directory"""
-    filepath = os.path.join(DATA_DIR, filename)
-    with open(filepath, 'r') as f:
-        return json.load(f)
+inventory_items = db.fetch_all('inventory')
+orders = db.fetch_all('orders')
+demand_forecasts = db.fetch_all('demand_forecasts')
+backlog_items = db.fetch_all('backlog_items')
+purchase_orders = db.fetch_all('purchase_orders')
+shipments = db.fetch_all('shipments')
 
-# Load all datasets from JSON files
-inventory_items = load_json_file('inventory.json')
-orders = load_json_file('orders.json')
-demand_forecasts = load_json_file('demand_forecasts.json')
-backlog_items = load_json_file('backlog_items.json')
-
-# Load spending data
-spending_data = load_json_file('spending.json')
-spending_summary = spending_data['spending_summary']
-monthly_spending = spending_data['monthly_spending']
-category_spending = spending_data['category_spending']
-
-# Load transactions
-recent_transactions = load_json_file('transactions.json')
-
-# Load purchase orders
-purchase_orders = load_json_file('purchase_orders.json')
-
-# All data is now loaded from JSON files in the data/ directory
-# This allows for easier maintenance and updates of the sample data
+# Spending data
+spending_summary = db.fetch_all('spending_summary')[0]
+monthly_spending = db.fetch_all('monthly_spending')
+category_spending = db.fetch_all('category_spending')
+recent_transactions = db.fetch_all('transactions')

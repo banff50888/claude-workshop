@@ -4,8 +4,9 @@ export default {
     overview: 'Overview',
     inventory: 'Inventory',
     orders: 'Orders',
+    shipments: 'Shipments',
     finance: 'Finance',
-    demandForecast: 'Demand Forecast',
+    demandForecast: 'Demanding Forecast',
     companyName: 'Catalyst Components',
     subtitle: 'Inventory Management System'
   },
@@ -129,6 +130,70 @@ export default {
     }
   },
 
+  ordersCache: {
+    title: 'Order Cache',
+    description: 'Inspect or clear cached order data (Redis)',
+    list: 'List cache',
+    clear: 'Clear cache',
+    listing: 'Loading...',
+    clearing: 'Clearing...',
+    count: '{count} entries',
+    unavailable: 'Redis cache is not available; orders are served directly from the database',
+    empty: 'The cache is empty',
+    cleared: 'Cleared {count} entries',
+    listError: 'Failed to load cache entries',
+    clearError: 'Failed to clear cache',
+    confirm: 'Clear all cached order entries?',
+    confirmYes: 'Confirm',
+    entry: 'Entry',
+    expires: 'Expires (s)',
+    noExpiry: 'No expiry',
+    order: 'Order #{id}',
+    orderList: 'Order list',
+    warehouse: 'Warehouse',
+    category: 'Category',
+    status: 'Status',
+    month: 'Month',
+    allOrders: 'All orders',
+    seconds: '{n}s'
+  },
+
+  shipments: {
+    title: 'Shipments',
+    description: 'Track outbound shipments and delivery performance',
+    total: 'Total Shipments',
+    inTransit: 'In Transit',
+    delayed: 'Delayed',
+    onTime: 'On-Time Delivery Rate',
+    onTimeNote: '{count} of {total} delivered on time',
+    all: 'All Shipments',
+    empty: 'No shipments match the current filters',
+    loadError: 'Failed to load shipments',
+    etaPrefix: 'ETA',
+    pending: 'Not shipped',
+    kg: 'kg',
+    table: {
+      shipmentNumber: 'Shipment',
+      orderNumber: 'Order',
+      customer: 'Customer',
+      carrier: 'Carrier',
+      trackingNumber: 'Tracking Number',
+      destination: 'Destination',
+      status: 'Status',
+      shipDate: 'Ship Date',
+      delivery: 'Delivery (ETA / Actual)',
+      packages: 'Packages',
+      weight: 'Weight'
+    },
+    status: {
+      preparing: 'Preparing',
+      inTransit: 'In Transit',
+      outForDelivery: 'Out for Delivery',
+      delivered: 'Delivered',
+      delayed: 'Delayed'
+    }
+  },
+
   // Finance/Spending
   finance: {
     title: 'Finance Dashboard',
@@ -169,7 +234,7 @@ export default {
 
   // Demand Forecast
   demand: {
-    title: 'Demand Forecast',
+    title: 'Demanding Forecast',
     description: 'Analyze demand trends and forecasts',
     increasingDemand: 'Increasing Demand',
     stableDemand: 'Stable Demand',
@@ -302,6 +367,13 @@ export default {
     dueDate: 'Due Date',
     addTask: 'Add Task',
     noTasks: 'No tasks yet. Add your first task above!'
+  },
+
+  // Theme
+  theme: {
+    label: 'Theme',
+    light: 'Light',
+    dark: 'Dark'
   },
 
   // Language

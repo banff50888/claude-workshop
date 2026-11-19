@@ -16,14 +16,20 @@ const createCurrentUser = () => {
 
   return computed(() => {
     const isJapanese = currentLocale.value === 'ja'
+    const isChinese = currentLocale.value === 'zh'
 
     return {
       ...baseUserData,
-      name: isJapanese ? '田中 太郎' : 'John Doe',
-      jobTitle: isJapanese ? 'オペレーションマネージャー' : 'Operations Manager',
-      department: isJapanese ? 'サプライチェーン運営部' : 'Supply Chain Operations',
-      location: isJapanese ? 'サンフランシスコ' : 'San Francisco',
-      tasks: isJapanese ? [
+      name: isJapanese ? '田中 太郎' : isChinese ? '张伟' : 'John Doe',
+      jobTitle: isJapanese ? 'オペレーションマネージャー' : isChinese ? '运营经理' : 'Operations Manager',
+      department: isJapanese ? 'サプライチェーン運営部' : isChinese ? '供应链运营部' : 'Supply Chain Operations',
+      location: isJapanese ? 'サンフランシスコ' : isChinese ? '旧金山' : 'San Francisco',
+      tasks: isChinese ? [
+        { id: 1, title: '审查第四季度库存水平', priority: 'high', dueDate: '2025-10-08', status: 'pending' },
+        { id: 2, title: '批准东京仓库订单', priority: 'medium', dueDate: '2025-10-06', status: 'pending' },
+        { id: 3, title: '更新电路板的再订货点', priority: 'medium', dueDate: '2025-10-10', status: 'pending' },
+        { id: 4, title: '审查月度支出报告', priority: 'low', dueDate: '2025-10-15', status: 'pending' }
+      ] : isJapanese ? [
         {
           id: 1,
           title: '第4四半期の在庫レベルを確認',

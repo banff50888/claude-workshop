@@ -1,8 +1,11 @@
+import json
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from pydantic import BaseModel
-from mock_data import inventory_items, orders, demand_forecasts, backlog_items, spending_summary, monthly_spending, category_spending, recent_transactions, purchase_orders
+import cache
+import db
+from mock_data import inventory_items, orders, demand_forecasts, backlog_items, spending_summary, monthly_spending, category_spending, recent_transactions, purchase_orders, shipments
 
 app = FastAPI(title="Factory Inventory Management System")
 
@@ -14,21 +17,21 @@ QUARTER_MAP = {
     'Q4-2025': ['2025-10', '2025-11', '2025-12']
 }
 
+def month_patterns(month: Optional[str]) -> Optional[list]:
+    """Return the strings an order_date must contain for a month/quarter filter, or None for no filter"""
+    if not month or month == 'all':
+        return None
+    if month.startswith('Q'):
+        # Quarters; an unknown quarter applies no filter
+        return QUARTER_MAP.get(month)
+    return [month]
+
 def filter_by_month(items: list, month: Optional[str]) -> list:
     """Filter items by month/quarter based on order_date field"""
-    if not month or month == 'all':
+    patterns = month_patterns(month)
+    if not patterns:
         return items
-
-    if month.startswith('Q'):
-        # Handle quarters
-        if month in QUARTER_MAP:
-            months = QUARTER_MAP[month]
-            return [item for item in items if any(m in item.get('order_date', '') for m in months)]
-    else:
-        # Direct month match
-        return [item for item in items if month in item.get('order_date', '')]
-
-    return items
+    return [item for item in items if any(m in item.get('order_date', '') for m in patterns)]
 
 def apply_filters(items: list, warehouse: Optional[str] = None, category: Optional[str] = None,
                  status: Optional[str] = None) -> list:
@@ -112,6 +115,25 @@ class PurchaseOrder(BaseModel):
     created_date: str
     notes: Optional[str] = None
 
+class Shipment(BaseModel):
+    id: str
+    shipment_number: str
+    order_id: str
+    order_number: str
+    order_date: str
+    customer: str
+    carrier: str
+    tracking_number: str
+    status: str
+    warehouse: str
+    category: str
+    destination: str
+    packages: int
+    weight_kg: float
+    ship_date: Optional[str] = None
+    estimated_delivery: str
+    actual_delivery: Optional[str] = None
+
 class CreatePurchaseOrderRequest(BaseModel):
     backlog_item_id: str
     supplier_name: str
@@ -148,18 +170,63 @@ def get_orders(
     status: Optional[str] = None,
     month: Optional[str] = None
 ):
-    """Get all orders with optional filtering"""
-    filtered_orders = apply_filters(orders, warehouse, category, status)
-    filtered_orders = filter_by_month(filtered_orders, month)
-    return filtered_orders
+    """Get all orders with optional filtering (queried from SQLite, cached in Redis when available)"""
+    filters = [None if v in (None, '', 'all') else v for v in (warehouse, category, status)]
+    key = 'orders:' + json.dumps([*filters, None if month == 'all' else month])
+
+    cached = cache.get_json(key)
+    if cached is not None:
+        return cached
+
+    result = db.query_orders(*filters, month_patterns=month_patterns(month))
+    cache.set_json(key, result)
+    return result
 
 @app.get("/api/orders/{order_id}", response_model=Order)
 def get_order(order_id: str):
     """Get a specific order"""
-    order = next((order for order in orders if order["id"] == order_id), None)
+    key = f'order:{order_id}'
+    order = cache.get_json(key)
+    if order is None:
+        order = db.get_order(order_id)
+        if order:
+            cache.set_json(key, order)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
+
+@app.get("/api/shipments", response_model=List[Shipment])
+def get_shipments(
+    warehouse: Optional[str] = None,
+    category: Optional[str] = None,
+    status: Optional[str] = None,
+    month: Optional[str] = None
+):
+    """Get shipments with optional filtering"""
+    filtered = apply_filters(shipments, warehouse, category, status)
+    return filter_by_month(filtered, month)
+
+@app.get("/api/shipments/{shipment_id}", response_model=Shipment)
+def get_shipment(shipment_id: str):
+    """Get a specific shipment"""
+    shipment = next((s for s in shipments if s["id"] == shipment_id), None)
+    if not shipment:
+        raise HTTPException(status_code=404, detail="Shipment not found")
+    return shipment
+
+ORDERS_CACHE_PREFIX = 'order'  # matches both 'orders:<filters>' and 'order:<id>' keys
+
+@app.get("/api/cache/orders")
+def list_orders_cache():
+    """List the order entries currently cached in Redis"""
+    entries = cache.list_keys(ORDERS_CACHE_PREFIX)
+    return {"available": cache.is_available(), "count": len(entries), "entries": entries}
+
+@app.delete("/api/cache/orders")
+def clear_orders_cache():
+    """Clear all cached order entries; the next requests are served from SQLite and re-cached"""
+    deleted = cache.delete_prefix(ORDERS_CACHE_PREFIX)
+    return {"available": cache.is_available(), "deleted": deleted}
 
 @app.get("/api/demand", response_model=List[DemandForecast])
 def get_demand_forecasts():

@@ -53,3 +53,7 @@ logs/
 # Environment variables
 .env
 .claude/settings.local.json
+
+# SQLite database (generated from server/data/*.json on first start)
+server/data/*.db
+server/data/*.db-journal

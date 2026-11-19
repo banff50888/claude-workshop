@@ -33,6 +33,32 @@ export const api = {
     return response.data
   },
 
+  async getOrdersCache() {
+    const response = await axios.get(`${API_BASE_URL}/cache/orders`)
+    return response.data
+  },
+
+  async clearOrdersCache() {
+    const response = await axios.delete(`${API_BASE_URL}/cache/orders`)
+    return response.data
+  },
+
+  async getShipments(filters = {}) {
+    const params = new URLSearchParams()
+    if (filters.warehouse && filters.warehouse !== 'all') params.append('warehouse', filters.warehouse)
+    if (filters.category && filters.category !== 'all') params.append('category', filters.category)
+    if (filters.status && filters.status !== 'all') params.append('status', filters.status)
+    if (filters.month && filters.month !== 'all') params.append('month', filters.month)
+
+    const response = await axios.get(`${API_BASE_URL}/shipments?${params.toString()}`)
+    return response.data
+  },
+
+  async getShipment(id) {
+    const response = await axios.get(`${API_BASE_URL}/shipments/${id}`)
+    return response.data
+  },
+
   async getDemandForecasts() {
     const response = await axios.get(`${API_BASE_URL}/demand`)
     return response.data

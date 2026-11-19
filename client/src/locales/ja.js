@@ -4,6 +4,7 @@ export default {
     overview: '概要',
     inventory: '在庫',
     orders: '注文',
+    shipments: '出荷',
     finance: '財務',
     demandForecast: '需要予測',
     companyName: '触媒コンポーネンツ',
@@ -126,6 +127,70 @@ export default {
       status: 'ステータス',
       expectedDelivery: '予定配達日',
       actualDelivery: '実際の配達日'
+    }
+  },
+
+  ordersCache: {
+    title: '注文キャッシュ',
+    description: 'キャッシュされた注文データ(Redis)の確認と消去',
+    list: 'キャッシュ一覧',
+    clear: 'キャッシュを消去',
+    listing: '読み込み中...',
+    clearing: '消去中...',
+    count: '{count} 件',
+    unavailable: 'Redisキャッシュは利用できません。注文はデータベースから直接取得されます',
+    empty: 'キャッシュは空です',
+    cleared: '{count} 件を消去しました',
+    listError: 'キャッシュエントリの読み込みに失敗しました',
+    clearError: 'キャッシュの消去に失敗しました',
+    confirm: 'キャッシュされた注文をすべて消去しますか?',
+    confirmYes: '確認',
+    entry: 'エントリ',
+    expires: '有効期限(秒)',
+    noExpiry: '期限なし',
+    order: '注文 #{id}',
+    orderList: '注文一覧',
+    warehouse: '倉庫',
+    category: 'カテゴリ',
+    status: 'ステータス',
+    month: '月',
+    allOrders: 'すべての注文',
+    seconds: '{n}秒'
+  },
+
+  shipments: {
+    title: '出荷',
+    description: '出荷状況と配送パフォーマンスを追跡',
+    total: '出荷総数',
+    inTransit: '輸送中',
+    delayed: '遅延',
+    onTime: '納期遵守率',
+    onTimeNote: '{total}件中{count}件が期日通りに配達',
+    all: 'すべての出荷',
+    empty: '現在のフィルターに一致する出荷はありません',
+    loadError: '出荷データの読み込みに失敗しました',
+    etaPrefix: '予定',
+    pending: '未出荷',
+    kg: 'kg',
+    table: {
+      shipmentNumber: '出荷番号',
+      orderNumber: '注文番号',
+      customer: '顧客',
+      carrier: '運送業者',
+      trackingNumber: '追跡番号',
+      destination: '配送先',
+      status: 'ステータス',
+      shipDate: '出荷日',
+      delivery: '配達(予定/実績)',
+      packages: '個数',
+      weight: '重量'
+    },
+    status: {
+      preparing: '準備中',
+      inTransit: '輸送中',
+      outForDelivery: '配達中',
+      delivered: '配達済み',
+      delayed: '遅延'
     }
   },
 
@@ -302,6 +367,13 @@ export default {
     dueDate: '期限',
     addTask: 'タスクを追加',
     noTasks: 'タスクがありません。上記からタスクを追加してください！'
+  },
+
+  // Theme
+  theme: {
+    label: 'テーマ',
+    light: 'ライト',
+    dark: 'ダーク'
   },
 
   // Language

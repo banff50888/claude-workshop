@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+uv.lock
+generate_data.py
+CLAUDE.md
+Dockerfile
+.dockerignore
+data/*.db
+data/*.db-journal
